@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Beacon Comercial</string>
+    <string name="server_address">http://afternoon-coast-28639.herokuapp.com</string>
+</resources>
