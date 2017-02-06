@@ -32,6 +32,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import static com.example.carlos.beaconcomercial.R.drawable.item;
+
 /**
  * Created by Federico on 24/10/2016.
  * ItemListActivity clase Activity que visualiza un item de la lista y permite eliminarlo de la misma
@@ -147,13 +149,13 @@ public class ItemListActivity extends Activity implements BeaconConsumer {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        beaconManager.unbind(this);
         try {
-            beaconManager.stopRangingBeaconsInRegion(new Region(("Ranging region"), null, null, null));
+            beaconManager.stopRangingBeaconsInRegion(new Region(beacon.getDescription(),null, Identifier.parse(beacon.getMajor_region_id().toString()),Identifier.parse(beacon.getMinor_region_id().toString())));
         }
         catch(RemoteException re){
             re.printStackTrace();
         }
+        beaconManager.unbind(this);
     }
 
     @Override
@@ -167,11 +169,18 @@ public class ItemListActivity extends Activity implements BeaconConsumer {
 
             @Override
             public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
+                boolean found = false;
                 if (beacons.size()>0){
-                    DecimalFormat df = new DecimalFormat("0.00");
-                    logToDisplay(df.format(beacons.iterator().next().getDistance()));
+                    for (Beacon b: beacons) {
+                        if(b.getId2().toInt() == beacon.getMajor_region_id() && b.getId3().toInt() == beacon.getMinor_region_id()) {
+                            DecimalFormat df = new DecimalFormat("0.00");
+                            logToDisplay(df.format(beacons.iterator().next().getDistance()));
+                            found = true;
+                            break;
+                        }
+                    }
                 }
-                else{
+                if(found == false){
                     Log.i(TAG,"No beacons in this region.\r\n");
                     logToDisplayNoBeacon();
                 }
@@ -215,6 +224,8 @@ public class ItemListActivity extends Activity implements BeaconConsumer {
         }
     }
 
+
+
     /*
         logToDisplay método privado para graficar la distancia al beacon
      */
@@ -234,7 +245,7 @@ public class ItemListActivity extends Activity implements BeaconConsumer {
         runOnUiThread(new Runnable() {
             public void run() {
                 TextView distance = (TextView) findViewById(R.id.textViewDist);
-                distance.setText("Saliste de la región del beacon.");
+                distance.setText("No estás dentro de la región del beacon.");
             }
         });
     }

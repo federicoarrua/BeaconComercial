@@ -20,6 +20,7 @@ import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconConsumer;
 import org.altbeacon.beacon.BeaconManager;
 import org.altbeacon.beacon.BeaconParser;
+import org.altbeacon.beacon.Identifier;
 import org.altbeacon.beacon.MonitorNotifier;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
@@ -97,11 +98,8 @@ public class ListRangeActivity extends ListActivity implements BeaconConsumer {
         this.beaconManager = BeaconManager.getInstanceForApplication(this);
         this.beaconManager.setForegroundScanPeriod(1900l);
         this.beaconManager.setForegroundBetweenScanPeriod(0l);
-        
-        //Descomentar si el regionBootstrap esta inicializado en la aplicación
-        //((ApplicationBeacon)this.getApplication()).stopBeaconMonitoring();
-        beaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout("m:0-3=4c000215,i:4-19,i:20-21,i:22-23,p:24-24"));
 
+        beaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout("m:0-3=4c000215,i:4-19,i:20-21,i:22-23,p:24-24"));
         beaconManager.bind(this);
     }
 
@@ -165,15 +163,39 @@ public class ListRangeActivity extends ListActivity implements BeaconConsumer {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        beaconManager.bind(this);
+        try {
+            beaconManager.startRangingBeaconsInRegion(new Region("Ranging region", null, null, null));
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
-        beaconManager.unbind(this);
         try {
             beaconManager.stopRangingBeaconsInRegion(new Region(("Ranging region"), null, null, null));
         }
         catch(RemoteException re){
             re.printStackTrace();
         }
+        beaconManager.unbind(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            beaconManager.stopRangingBeaconsInRegion(new Region(("Ranging region"), null, null, null));
+        }
+        catch(RemoteException re){
+            re.printStackTrace();
+        }
+        beaconManager.unbind(this);
     }
 
     /*
