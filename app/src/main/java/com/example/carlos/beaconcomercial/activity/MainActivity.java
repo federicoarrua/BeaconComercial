@@ -22,6 +22,12 @@ import android.widget.Toast;
 import com.example.carlos.beaconcomercial.R;
 import com.example.carlos.beaconcomercial.servertasks.BeaconsGetTask;
 
+/**
+ * Created by Federico on 13/12/2016.
+ * MainActivity vista principal de la aplicación contiene los botones que dirigen a la funcionalidad
+ * de la aplicación.
+ */
+
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MAIN_ACTIVITY";

@@ -32,6 +32,8 @@ import java.util.Iterator;
 
 /**
  * Created by Federico on 13/12/2016.
+ * ListRangeActivity visualiza todos los beacons dentro del rango de cobertura Bluetooth y los
+ * visualiza en una lista.
  */
 
 public class ListRangeActivity extends ListActivity implements BeaconConsumer {

@@ -30,6 +30,8 @@ import java.util.HashMap;
 
 /**
  * Created by Federico on 24/10/2016.
+ * RangingActivity visualiza un beacon con los detalles del mismo que están en la base de datos y
+ * la distancia si es que sigue dentro del rango.
  */
 
 public class RangingActivity extends Activity implements BeaconConsumer {
@@ -182,19 +184,5 @@ public class RangingActivity extends Activity implements BeaconConsumer {
             }
         });
     }
-
-    /*
-        startMonitorRegions Método privado para iniciar regiones de monitoreo
-     */
-    private void startMonitorRegions(){
-        for(int i=0;i<beaconModelArray.length;i++) {
-            Region region = new Region(beaconModelArray[i].getName(),null, Identifier.parse(beaconModelArray[i].getMajor_region_id().toString()), Identifier.parse(beaconModelArray[i].getMinor_region_id().toString()));
-            try {
-                beaconManager.startMonitoringBeaconsInRegion(region);
-            }
-            catch(RemoteException re){
-                re.printStackTrace();
-            }
-        }
-    }
+    
 }

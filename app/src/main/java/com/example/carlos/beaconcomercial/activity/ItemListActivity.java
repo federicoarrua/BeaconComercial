@@ -34,6 +34,8 @@ import java.util.List;
 
 /**
  * Created by Federico on 24/10/2016.
+ * ItemListActivity clase Activity que visualiza un item de la lista y permite eliminarlo de la misma
+ * asi como ver la información de su descripción en la base de datos
  */
 
 public class ItemListActivity extends Activity implements BeaconConsumer {
@@ -235,20 +237,5 @@ public class ItemListActivity extends Activity implements BeaconConsumer {
                 distance.setText("Saliste de la región del beacon.");
             }
         });
-    }
-
-    /*
-        startMonitorRegions Método privado para iniciar regiones de monitoreo
-     */
-    private void startMonitorRegions(){
-        for(int i=0;i<beaconModelArray.length;i++) {
-            Region region = new Region(beaconModelArray[i].getName(),null, Identifier.parse(beaconModelArray[i].getMajor_region_id().toString()), Identifier.parse(beaconModelArray[i].getMinor_region_id().toString()));
-            try {
-                beaconManager.startMonitoringBeaconsInRegion(region);
-            }
-            catch(RemoteException re){
-                re.printStackTrace();
-            }
-        }
     }
 }

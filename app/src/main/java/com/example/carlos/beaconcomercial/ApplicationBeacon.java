@@ -45,14 +45,17 @@ public class ApplicationBeacon extends Application implements BootstrapNotifier 
     @RequiresPermission(Manifest.permission.ACCOUNT_MANAGER)
     public void onCreate() {
         super.onCreate();
+
         BeaconManager beaconManager = BeaconManager.getInstanceForApplication(this);
+
+        //Seteo periodos de escaneo en ms
         beaconManager.setBackgroundScanPeriod(1000l);
         beaconManager.setBackgroundBetweenScanPeriod(0l);
+
+        //Seteo en cuanto tiempo sin recibir mensajes beacon considero que sali de la región en ms
         beaconManager.setRegionExitPeriod(2000l);
 
-        //For iBeacon uncomment this line
-        Log.d(TAG, "setting up background monitoring for beacons and power saving");
-
+        //iBeacon Parser
         beaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout("m:0-3=4c000215,i:4-19,i:20-21,i:22-23,p:24-24"));
         prefs = getSharedPreferences("con.example.carlos.beaconcomercial",MODE_PRIVATE);
 
@@ -91,6 +94,10 @@ public class ApplicationBeacon extends Application implements BootstrapNotifier 
         }
     }
 
+
+    /*
+    didEnterRegion(Region region) se ejecuta este metodo cada vez que se comienza a recibir algún beacon
+     */
     @Override
     public void didEnterRegion(Region region) {
         Log.d(TAG, "Got a didEnterRegion call: ");
@@ -110,9 +117,12 @@ public class ApplicationBeacon extends Application implements BootstrapNotifier 
         showNotification("Beacon Notification","Estas cerca de \""+b.getName()+"\"",b);
         Log.d(TAG,"NOTIFICACION "+region.toString());
 
-        //regionBootstrap.disable();
     }
 
+
+    /*
+    didExitRegion(Region region) se ejecuta este metodo cada vez que se sale de una zona beacon
+     */
     @Override
     public void didExitRegion(Region region) {
         Log.d(TAG, "Got a didExitRegion call");
@@ -132,6 +142,7 @@ public class ApplicationBeacon extends Application implements BootstrapNotifier 
 
     }
 
+    //Armo la notificación a visualizar
     public void showNotification(String title, String message , BeaconModel b) {
         Intent notifyIntent = new Intent(this, ItemListActivity.class);
         notifyIntent.putExtra("beacon",b);

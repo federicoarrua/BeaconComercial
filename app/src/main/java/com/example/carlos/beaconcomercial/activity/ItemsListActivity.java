@@ -30,6 +30,7 @@ import java.util.List;
 
 /**
  * Created by Carlos on 27/01/2017.
+ * ItemsListActivity visualiza la lista de items actual
  */
 
 public class ItemsListActivity extends ListActivity {
@@ -70,6 +71,7 @@ public class ItemsListActivity extends ListActivity {
         }
         itemList = new ArrayList<BeaconModel>();
 
+        //Barra Search
         EditText inputSearch = (EditText) findViewById(R.id.inputSearch);
         inputSearch.addTextChangedListener(new TextWatcher() {
 
@@ -93,8 +95,8 @@ public class ItemsListActivity extends ListActivity {
         });
 
         ListView lv = getListView();
-        //addItems();
 
+        //Al hacer click en un item voy a su vista particular
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener(){
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -109,6 +111,7 @@ public class ItemsListActivity extends ListActivity {
         beaconManager = BeaconManager.getInstanceForApplication(this);
 
         Button b = (Button) findViewById(R.id.button_eraselist);
+        //funcionalidad de eliminar lista
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -120,6 +123,7 @@ public class ItemsListActivity extends ListActivity {
         });
     }
 
+    //onResume actualiza la lista de items
     @Override
     protected void onResume() {
         super.onResume();
@@ -130,6 +134,7 @@ public class ItemsListActivity extends ListActivity {
             finish();
     }
 
+    //Añade items a la listview
     private void addItems() {
         listItems=new ArrayList<>();
         String item;
@@ -149,6 +154,7 @@ public class ItemsListActivity extends ListActivity {
         });
     }
 
+    //Metodo para dejar de monitorear al eliminar la lista antigua
     private void stopMonitor(){
         //Recupero la lista de items antigua
         String s = prefs.getString("itemsList",null);

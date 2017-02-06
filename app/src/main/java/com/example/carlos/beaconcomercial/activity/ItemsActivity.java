@@ -34,6 +34,7 @@ import java.util.List;
 
 /**
  * Created by Carlos on 12/01/2017.
+ * ItemsActivity lista los items de la base de datos y permite armar una lista a monitorear
  */
 
 public class ItemsActivity extends ListActivity {
@@ -84,6 +85,7 @@ public class ItemsActivity extends ListActivity {
         }
         itemList = new ArrayList<BeaconModel>();
 
+        //Barra search
         EditText inputSearch = (EditText) findViewById(R.id.inputSearch);
         inputSearch.addTextChangedListener(new TextWatcher() {
 
@@ -109,6 +111,7 @@ public class ItemsActivity extends ListActivity {
         ListView lv = getListView();
         addItems();
 
+        //Cambio el color de los items seleccionados
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             @Override
@@ -126,6 +129,8 @@ public class ItemsActivity extends ListActivity {
         });
         beaconManager = BeaconManager.getInstanceForApplication(this);
         Button b = (Button) findViewById(R.id.button_listitems);
+
+        //Al hacer click creo la lista de items a monitorear
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -185,7 +190,7 @@ public class ItemsActivity extends ListActivity {
         });
     }
 
-
+    //Añade items a la listview
     private void addItems() {
         listItems=new ArrayList<>();
         String item;
@@ -205,24 +210,7 @@ public class ItemsActivity extends ListActivity {
         });
     }
 
-    private void noItems() {
-        listItems=new ArrayList<>();
-        adapter=new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,listItems);
-        runOnUiThread(new Runnable() {
-            public void run() {
-                setListAdapter(adapter);
-                adapter.notifyDataSetChanged();
-            }
-        });
-    }
-    private String getNameBeacon(int major_region_id,int minor_region_id){
-        for(int i=0; i<beaconModelArray.length;i++){
-            if(beaconModelArray[i].getMinor_region_id()==minor_region_id && beaconModelArray[i].getMajor_region_id()==major_region_id )
-                return "Nombre: " + beaconModelArray[i].getName();
-        }
-        return "El beacon no está en la base de datos";
-    }
-
+    //Metodo para dejar de monitorear al eliminar la lista antigua
     private void stopMonitor(){
         //Recupero la lista de items antigua
         String s = prefs.getString("itemsList",null);

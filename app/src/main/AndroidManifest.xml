@@ -3,6 +3,7 @@
     package="com.example.carlos.beaconcomercial"
     android:installLocation="internalOnly">
 
+    <!--Permisos requeridos por la aplicación-->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -29,9 +30,6 @@
         </activity>
         <activity android:name="com.example.carlos.beaconcomercial.activity.ItemListActivity"
             android:launchMode="singleInstance">
-
-        </activity>
-        <activity android:name="com.example.carlos.beaconcomercial.activity.BeaconActivity">
 
         </activity>
         <activity android:name="com.example.carlos.beaconcomercial.activity.ListRangeActivity">
