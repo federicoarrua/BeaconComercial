@@ -89,6 +89,7 @@ public class ItemListActivity extends Activity implements BeaconConsumer {
                                             re.printStackTrace();
                                         }
                                         finish();
+
                                     }
                                 })
                                 .setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -109,6 +110,7 @@ public class ItemListActivity extends Activity implements BeaconConsumer {
                             }
                             finish();
                         }
+                        break;
                     }
                 }
             }
@@ -127,9 +129,9 @@ public class ItemListActivity extends Activity implements BeaconConsumer {
 
             //Si json es null significa que el beacon no esta en la base de datos
             if(json != null) {
-                BeaconModel b = BeaconJsonUtils.JsonToBeacon(json);
-                txtName.setText(b.getName());
-                txtDesc.setText(b.getDescription());
+                beacon = BeaconJsonUtils.JsonToBeacon(json);
+                txtName.setText(beacon.getName());
+                txtDesc.setText(beacon.getDescription());
             }
             else{
                 txtName.setText("No hay nombre");
