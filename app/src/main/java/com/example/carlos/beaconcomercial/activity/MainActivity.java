@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
-        super.onStart();
+        super.onPostCreate(savedInstanceState);
         if (ContextCompat.checkSelfPermission(this,Manifest.permission.GET_ACCOUNTS)!= PackageManager.PERMISSION_GRANTED  && ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_COARSE_LOCATION)!= PackageManager.PERMISSION_GRANTED)
             ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.GET_ACCOUNTS,Manifest.permission.ACCESS_COARSE_LOCATION},MY_PERMISSIONS_REQUEST);
         else{

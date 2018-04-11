@@ -8,6 +8,15 @@ package com.example.carlos.beaconcomercial.classesBeacon;
 public class Device {
     private String device_id;
 
+    public Device(){
+        super();
+    }
+
+    public Device(String device_id) {
+        super();
+        this.device_id = device_id;
+    }
+
     public String getDevice_id() {
         return device_id;
     }

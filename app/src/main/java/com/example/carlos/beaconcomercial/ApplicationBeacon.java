@@ -12,23 +12,30 @@ import android.support.annotation.RequiresPermission;
 import android.util.Log;
 
 import com.example.carlos.beaconcomercial.activity.ItemListActivity;
+import com.example.carlos.beaconcomercial.api.ApiConstants;
+import com.example.carlos.beaconcomercial.api.BeaconApi;
 import com.example.carlos.beaconcomercial.classesBeacon.BeaconModel;
+import com.example.carlos.beaconcomercial.classesBeacon.Device;
 import com.example.carlos.beaconcomercial.servertasks.BeaconsGetTask;
 import com.example.carlos.beaconcomercial.servertasks.DevicePostTask;
 import com.example.carlos.beaconcomercial.servertasks.DiscoverPostTask;
 import com.example.carlos.beaconcomercial.utils.BeaconJsonUtils;
 import com.example.carlos.beaconcomercial.utils.UserEmailFetcher;
+import com.google.gson.Gson;
 
 import org.altbeacon.beacon.BeaconManager;
 import org.altbeacon.beacon.BeaconParser;
 import org.altbeacon.beacon.Identifier;
 import org.altbeacon.beacon.Region;
+import org.altbeacon.beacon.service.BeaconService;
 import org.altbeacon.beacon.startup.BootstrapNotifier;
 import org.altbeacon.beacon.startup.RegionBootstrap;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import retrofit2.Retrofit;
 
 /**
  * Created by Federico on 31/10/2016.
@@ -63,24 +70,19 @@ public class ApplicationBeacon extends Application implements BootstrapNotifier 
             // En la primer ejecución de la app registro el mail del dispositivo a la base de datos
             Log.d(TAG,"Firts Run");
             prefs.edit().putBoolean("firstrun",false);
-
-            HashMap<String,String> p = new HashMap<String,String>();
             String device_id =UserEmailFetcher.getEmail(getApplicationContext());
-            //String device_id ="example";
-            p.put("device_id",device_id);
 
             prefs.edit().putString("device_id", device_id).commit();
             prefs.edit().putBoolean("firstrun", false).commit();
 
-            new DevicePostTask().execute(p);
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(ApiConstants.BaseURL)
+                    .build();
 
-            try {
-                String beaconsJson = (String) new BeaconsGetTask().execute().get();
-                prefs.edit().putString("beacons", beaconsJson).commit();
-            }
-            catch(Exception e){
-                e.printStackTrace();
-            }
+            BeaconApi service = retrofit.create(BeaconApi.class);
+            service.postDevice(new Device(device_id));
+            Gson g = new Gson();
+            prefs.edit().putString("beacons", g.toJson(service.getBeacons())).commit();
         }
         try {
 
@@ -90,7 +92,7 @@ public class ApplicationBeacon extends Application implements BootstrapNotifier 
             Log.d(TAG,"Inititialization Completed!");
         }
         catch(Exception e){
-            //e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
