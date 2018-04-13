@@ -12,30 +12,17 @@ import android.support.annotation.RequiresPermission;
 import android.util.Log;
 
 import com.example.carlos.beaconcomercial.activity.ItemListActivity;
-import com.example.carlos.beaconcomercial.api.ApiConstants;
-import com.example.carlos.beaconcomercial.api.BeaconApi;
 import com.example.carlos.beaconcomercial.classesBeacon.BeaconModel;
-import com.example.carlos.beaconcomercial.classesBeacon.Device;
-import com.example.carlos.beaconcomercial.servertasks.BeaconsGetTask;
-import com.example.carlos.beaconcomercial.servertasks.DevicePostTask;
 import com.example.carlos.beaconcomercial.servertasks.DiscoverPostTask;
-import com.example.carlos.beaconcomercial.utils.BeaconJsonUtils;
-import com.example.carlos.beaconcomercial.utils.UserEmailFetcher;
-import com.google.gson.Gson;
 
 import org.altbeacon.beacon.BeaconManager;
 import org.altbeacon.beacon.BeaconParser;
 import org.altbeacon.beacon.Identifier;
 import org.altbeacon.beacon.Region;
-import org.altbeacon.beacon.service.BeaconService;
 import org.altbeacon.beacon.startup.BootstrapNotifier;
 import org.altbeacon.beacon.startup.RegionBootstrap;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-
-import retrofit2.Retrofit;
 
 /**
  * Created by Federico on 31/10/2016.
@@ -64,31 +51,10 @@ public class ApplicationBeacon extends Application implements BootstrapNotifier 
 
         //iBeacon Parser
         beaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout("m:0-3=4c000215,i:4-19,i:20-21,i:22-23,p:24-24"));
-        prefs = getSharedPreferences("con.example.carlos.beaconcomercial",MODE_PRIVATE);
 
-        if (prefs.getBoolean("firstrun", true)) {
-            // En la primer ejecución de la app registro el mail del dispositivo a la base de datos
-            Log.d(TAG,"Firts Run");
-            prefs.edit().putBoolean("firstrun",false);
-            String device_id =UserEmailFetcher.getEmail(getApplicationContext());
-
-            prefs.edit().putString("device_id", device_id).commit();
-            prefs.edit().putBoolean("firstrun", false).commit();
-
-            Retrofit retrofit = new Retrofit.Builder()
-                    .baseUrl(ApiConstants.BaseURL)
-                    .build();
-
-            BeaconApi service = retrofit.create(BeaconApi.class);
-            service.postDevice(new Device(device_id));
-            Gson g = new Gson();
-            prefs.edit().putString("beacons", g.toJson(service.getBeacons())).commit();
-        }
         try {
-
             //Código para monitorear en background y lanzar notificaciones
             regionBootstrap = new RegionBootstrap(this,new Region("todos",Identifier.parse("1"),Identifier.parse("1"),Identifier.parse("1")));
-
             Log.d(TAG,"Inititialization Completed!");
         }
         catch(Exception e){
@@ -164,27 +130,4 @@ public class ApplicationBeacon extends Application implements BootstrapNotifier 
         notificationManager.notify(NOTIFICATION_ID, notification);
     }
 
-    //Obtain region list from rails server with GET method
-    public List<Region> createRegions(String json){
-        BeaconModel[] beaconArray = BeaconJsonUtils.JsonToBeaconArray(json);
-        List<Region> regionList = new ArrayList<>();
-
-        for(int i=0;i<beaconArray.length;i++) {
-            Region region = new Region(beaconArray[i].getId().toString(),
-                    null, Identifier.parse(beaconArray[i].getMajor_region_id().toString()), Identifier.parse(beaconArray[i].getMinor_region_id().toString()));
-            regionList.add(region);
-        }
-        return regionList;
-    }
-
-    public void startBeaconMonitoring() {
-        if (regionBootstrap == null) {
-            Region region = new Region("backgroundRegion", null, null, null);
-            regionBootstrap = new RegionBootstrap(this, region);
-        }
-    }
-
-    public void stopBeaconMonitoring() {
-        regionBootstrap.disable();
-    }
 }

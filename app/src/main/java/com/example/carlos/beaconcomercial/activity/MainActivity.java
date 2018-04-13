@@ -20,7 +20,15 @@ import android.widget.Toast;
 
 
 import com.example.carlos.beaconcomercial.R;
-import com.example.carlos.beaconcomercial.servertasks.BeaconsGetTask;
+import com.example.carlos.beaconcomercial.api.ApiUtils;
+import com.example.carlos.beaconcomercial.api.BeaconApi;
+import com.example.carlos.beaconcomercial.classesBeacon.Device;
+import com.google.gson.Gson;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
 
 /**
  * Created by Federico on 13/12/2016.
@@ -36,6 +44,12 @@ public class MainActivity extends AppCompatActivity {
     private final int MY_PERMISSIONS_READ_CONTACTS = 3;
     private SharedPreferences prefs;
 
+    private ProgressBar progressBar;
+    private Button buttonList;
+    private Button buttonItems;
+    private Button buttonItemsList;
+    private Button buttonSync;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,35 +59,69 @@ public class MainActivity extends AppCompatActivity {
 
         this.prefs = getSharedPreferences("con.example.carlos.beaconcomercial",MODE_PRIVATE);
 
-        ProgressBar pg = (ProgressBar) findViewById(R.id.progressBar);
-        pg.setVisibility(View.INVISIBLE);
+        progressBar = findViewById(R.id.progressBar);
+        buttonList = findViewById(R.id.buttonList);
+        buttonItems = findViewById(R.id.buttonItems);
+        buttonItemsList = findViewById(R.id.buttonItemsList);
+        buttonSync = findViewById(R.id.buttonSync);
 
-        Button bList = (Button) findViewById(R.id.buttonList);
-        bList.setOnClickListener(new View.OnClickListener(){
+
+        progressBar.setVisibility(View.INVISIBLE);
+        buttonSync.setVisibility(View.INVISIBLE);
+
+        buttonItemsList.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                launchItemsList();
+            }
+        });
+        buttonItems.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                launchItems();
+            }
+        });
+        buttonList.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
                 launchList();
             }
         });
 
-        Button bItems = (Button) findViewById(R.id.buttonItems);
-        bItems.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v) {
-                launchItems();
-            }
-        });
+        syncBeacons();
 
-        Button bItemsList = (Button) findViewById(R.id.buttonItemsList);
-        bItemsList.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v) {
-                launchItemsList();
-            }
-        });
+    }
 
-        Button bSync = (Button) findViewById(R.id.buttonSync);
-        bSync.setVisibility(View.INVISIBLE);
+    private void syncBeacons(){
+        prefs = getSharedPreferences("con.example.carlos.beaconcomercial",MODE_PRIVATE);
+        if (prefs.getBoolean("firstrun", true)) {
+            // En la primer ejecución de la app registro el mail del dispositivo a la base de datos
+            Log.d(TAG,"Firts Run");
+            prefs.edit().putBoolean("firstrun",false);
+            String device_id = "UserEmailFetcher.getEmail(getApplicationContext())";
+
+            prefs.edit().putString("device_id", device_id).commit();
+            prefs.edit().putBoolean("firstrun", false).commit();
+
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(ApiUtils.BaseURL)
+                    .build();
+
+            BeaconApi service = retrofit.create(BeaconApi.class);
+            service.postDevice(new Device(device_id)).enqueue(new Callback<Device>() {
+                @Override
+                public void onResponse(Call<Device> call, Response<Device> response) {
+                    Log.d("Success",response.toString());
+                }
+
+                @Override
+                public void onFailure(Call<Device> call, Throwable t) {
+                    Log.d("Success",t.toString());
+                }
+            });
+            Gson g = new Gson();
+            prefs.edit().putString("beacons", g.toJson(service.getBeacons())).commit();
+        }
 
     }
 
@@ -102,11 +150,11 @@ public class MainActivity extends AppCompatActivity {
             case MY_PERMISSIONS_REQUEST: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-                    TextView txt =(TextView) findViewById(R.id.textViewPerm);
+                    TextView txt = findViewById(R.id.textViewPerm);
                     txt.setVisibility(View.INVISIBLE);
                 }
                 if(grantResults[1] == PackageManager.PERMISSION_DENIED){
-                    TextView txt =(TextView) findViewById(R.id.textViewPerm);
+                    TextView txt = findViewById(R.id.textViewPerm);
                     txt.setText("Para el funcionamiento de la aplicación debe proveer permisos de localización a la app.");
                     txt.setTextColor(Color.RED);
                 }
@@ -115,11 +163,11 @@ public class MainActivity extends AppCompatActivity {
             case MY_PERMISSIONS_READ_CONTACTS:{}
             case MY_PERMISSIONS_ACCESS_COARSE_LOCATION:{
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    TextView txt =(TextView) findViewById(R.id.textViewPerm);
+                    TextView txt = findViewById(R.id.textViewPerm);
                     txt.setVisibility(View.INVISIBLE);
                 }
                 if(grantResults[0] == PackageManager.PERMISSION_DENIED){
-                    TextView txt =(TextView) findViewById(R.id.textViewPerm);
+                    TextView txt = findViewById(R.id.textViewPerm);
                     txt.setText("Para el funcionamiento de la aplicación debe proveer permisos de localización a la app.");
                     txt.setTextColor(Color.RED);
                 }
@@ -157,7 +205,7 @@ public class MainActivity extends AppCompatActivity {
         launchItems Método del botón Lista de Items
      */
     private void launchItems(){
-        Intent i = new Intent(this, ItemsActivity.class);
+        Intent i = new Intent(this, BeaconListActivity.class);
         startActivity(i);
     }
 
@@ -171,35 +219,4 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /*
-        syncWithDatabase Método del botón sincronizar
-     */
-    private void syncWithDatabase(){
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ProgressBar pg = (ProgressBar) findViewById(R.id.progressBar);
-                pg.setVisibility(View.VISIBLE);
-            }
-        });
-        try {
-            String beaconsJson = (String) new BeaconsGetTask().execute().get();
-            prefs.edit().putString("beacons", beaconsJson).commit();
-            int duration = Toast.LENGTH_SHORT;
-            Log.d(TAG,"Se sincronizó");
-            Toast toast = Toast.makeText(this, "App Sincronizada", duration);
-            toast.show();
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ProgressBar pg = (ProgressBar) findViewById(R.id.progressBar);
-                pg.setVisibility(View.INVISIBLE);
-            }
-        });
-
-    }
 }

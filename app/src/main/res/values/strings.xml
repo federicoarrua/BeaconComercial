@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Beacon Comercial</string>
     <string name="server_address">http://afternoon-coast-28639.herokuapp.com</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

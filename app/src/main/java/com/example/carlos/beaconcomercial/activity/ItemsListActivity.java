@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.os.RemoteException;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -16,6 +17,8 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.example.carlos.beaconcomercial.R;
+import com.example.carlos.beaconcomercial.api.ApiUtils;
+import com.example.carlos.beaconcomercial.api.BeaconApi;
 import com.example.carlos.beaconcomercial.classesBeacon.BeaconModel;
 import com.example.carlos.beaconcomercial.utils.BeaconJsonUtils;
 
@@ -27,6 +30,11 @@ import org.altbeacon.beacon.Region;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
 
 /**
  * Created by Carlos on 27/01/2017.
@@ -72,7 +80,7 @@ public class ItemsListActivity extends ListActivity {
         itemList = new ArrayList<BeaconModel>();
 
         //Barra Search
-        EditText inputSearch = (EditText) findViewById(R.id.inputSearch);
+        EditText inputSearch = findViewById(R.id.inputSearch);
         inputSearch.addTextChangedListener(new TextWatcher() {
 
             @Override
@@ -110,7 +118,7 @@ public class ItemsListActivity extends ListActivity {
 
         beaconManager = BeaconManager.getInstanceForApplication(this);
 
-        Button b = (Button) findViewById(R.id.button_eraselist);
+        Button b = findViewById(R.id.button_eraselist);
         //funcionalidad de eliminar lista
         b.setOnClickListener(new View.OnClickListener() {
             @Override

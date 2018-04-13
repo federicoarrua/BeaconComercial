@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.RemoteException;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -18,8 +19,9 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.example.carlos.beaconcomercial.R;
+import com.example.carlos.beaconcomercial.api.ApiUtils;
+import com.example.carlos.beaconcomercial.api.BeaconApi;
 import com.example.carlos.beaconcomercial.classesBeacon.BeaconModel;
-import com.example.carlos.beaconcomercial.servertasks.BeaconsGetTask;
 import com.example.carlos.beaconcomercial.utils.BeaconJsonUtils;
 import com.google.gson.Gson;
 
@@ -32,6 +34,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 /**
  * Created by Carlos on 12/01/2017.
  * ItemsActivity lista los items de la base de datos y permite armar una lista a monitorear
@@ -42,8 +48,9 @@ public class ItemsActivity extends ListActivity {
     private String TAG = "RangingDetectBeacon";
 
     //Adaptadores para la ListView
-    private ArrayList<String> listItems=new ArrayList<>();
+    private ArrayList<String> listItems;
     private ArrayAdapter<String> adapter;
+    private Button buttonListItem;
 
     private SharedPreferences prefs;
 
@@ -51,7 +58,7 @@ public class ItemsActivity extends ListActivity {
     private Collection<Beacon> beaconCollection;
 
     //Arreglo de beacons registrados en la base de datos
-    private BeaconModel[] beaconModelArray;
+    private List<BeaconModel> beaconModelList;
     private Boolean[] selected;
     private List<BeaconModel> itemList;
 
@@ -64,26 +71,13 @@ public class ItemsActivity extends ListActivity {
         setContentView(R.layout.items_layout);
 
         //Inicialización Adaptadores para la listView
-        adapter=new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,listItems);
-        setListAdapter(adapter);
+        adapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,listItems);
 
         //Inicialización del arreglo de beacons de la base de datos
         prefs = getSharedPreferences("con.example.carlos.beaconcomercial",MODE_PRIVATE);
 
-        try {
-            String beaconsJson = (String) new BeaconsGetTask().execute().get();
-            prefs.edit().putString("beacons", beaconsJson).commit();
-        }
-        catch(Exception e){
-            e.printStackTrace();
-        }
-
-        beaconModelArray = BeaconJsonUtils.JsonToBeaconArray(prefs.getString("beacons",null));
-        selected = new Boolean[beaconModelArray.length];
-        for(int i=0;i<selected.length;i++){
-            selected[i] = new Boolean(false);
-        }
-        itemList = new ArrayList<BeaconModel>();
+        itemList = new ArrayList<>();
+        listItems = new ArrayList<>();
 
         //Barra search
         EditText inputSearch = (EditText) findViewById(R.id.inputSearch);
@@ -109,7 +103,6 @@ public class ItemsActivity extends ListActivity {
         });
 
         ListView lv = getListView();
-        addItems();
 
         //Cambio el color de los items seleccionados
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -128,77 +121,17 @@ public class ItemsActivity extends ListActivity {
             }
         });
         beaconManager = BeaconManager.getInstanceForApplication(this);
-        Button b = (Button) findViewById(R.id.button_listitems);
+        buttonListItem = findViewById(R.id.button_listitems);
 
-        //Al hacer click creo la lista de items a monitorear
-        b.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                for(int i =0 ; i<selected.length;i++){
-                    if(selected[i])
-                        itemList.add(beaconModelArray[i]);
-                }
-                if(itemList.size() >0){
-                    if(prefs.getString("itemsList",null) != null) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(ItemsActivity.this);
-                        builder.setMessage("Al crear una nueva lista se elimina la anterior. Está seguro?")
-                                .setPositiveButton("Si", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        stopMonitor();
-                                        for (int i = 0; i < selected.length; i++) {
-                                            if (selected[i]) {
-                                                try {
-                                                    beaconManager.startMonitoringBeaconsInRegion(new Region(beaconModelArray[i].getName(), null, Identifier.parse(beaconModelArray[i].getMajor_region_id().toString()), Identifier.parse(beaconModelArray[i].getMinor_region_id().toString())));
-                                                } catch (RemoteException re) {
-                                                    re.printStackTrace();
-                                                }
-                                            }
-                                        }
-                                        //Guardo la lista de items escogidos en formato Json para recuperarla mas fácil de las SharedPrefs
-                                        prefs.edit().putString("itemsList", new Gson().toJson(itemList)).commit();
-                                        finish();
-                                    }
-                                })
-                                .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int id) {
-                                        //do things
-                                    }
-                                });
-                        AlertDialog alert = builder.create();
-                        alert.show();
-                    }
-                    else{
-                        stopMonitor();
-                        for (int i = 0; i < selected.length; i++) {
-                            if (selected[i]) {
-                                try {
-                                    beaconManager.startMonitoringBeaconsInRegion(new Region(beaconModelArray[i].getName(), null, Identifier.parse(beaconModelArray[i].getMajor_region_id().toString()), Identifier.parse(beaconModelArray[i].getMinor_region_id().toString())));
-                                } catch (RemoteException re) {
-                                    re.printStackTrace();
-                                }
-                            }
-                        }
-                        //Guardo la lista de items escogidos en formato Json para recuperarla mas fácil de las SharedPrefs
-                        prefs.edit().putString("itemsList", new Gson().toJson(itemList)).commit();
-                        finish();
-                    }
-                }
-                else
-                    Toast.makeText(ItemsActivity.this, "La lista debe tener al menos un ítem", Toast.LENGTH_SHORT).show();
-            }
-        });
+        getBeaconsList();
     }
 
     //Añade items a la listview
     private void addItems() {
-        listItems=new ArrayList<>();
         String item;
-        adapter=new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,listItems);
-        Integer i;
 
-        for ( i = 0 ; i<beaconModelArray.length ;i++) {
-            BeaconModel b = beaconModelArray[i];
+        for (Integer i = 0 ; i< beaconModelList.size() ; i++) {
+            BeaconModel b = beaconModelList.get(i);
             item= b.getName() + " :\r\n" +i.toString()+" Major: "+b.getMajor_region_id()+" Minor: "+b.getMinor_region_id();
             listItems.add(item);
         }
@@ -224,5 +157,90 @@ public class ItemsActivity extends ListActivity {
                 }
             }
         }
+    }
+
+    private void getBeaconsList(){
+        BeaconApi service = ApiUtils.getAPIService();
+        service.getBeacons().enqueue(new Callback<List<BeaconModel>>() {
+            @Override
+            public void onResponse(Call<List<BeaconModel>> call, Response<List<BeaconModel>> response) {
+                if(response.isSuccessful()){
+                    beaconModelList = response.body();
+                    for (BeaconModel b : beaconModelList)
+                        listItems.add(b.getName() + " :\r\n" +" Major: "+b.getMajor_region_id()+" Minor: "+b.getMinor_region_id());
+                    selected = new Boolean[beaconModelList.size()];
+                    for(int i=0;i<selected.length;i++){
+                        selected[i] = new Boolean(false);
+                    }
+                    setListAdapter(adapter);
+                    addItems();
+                    //Al hacer click creo la lista de items a monitorear
+                    buttonListItem.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            for(int i =0 ; i<selected.length;i++){
+                                if(selected[i])
+                                    itemList.add(beaconModelList.get(i));
+                            }
+                            if(itemList.size() >0){
+                                if(prefs.getString("itemsList",null) != null) {
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(ItemsActivity.this);
+                                    builder.setMessage("Al crear una nueva lista se elimina la anterior. Está seguro?")
+                                            .setPositiveButton("Si", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int which) {
+                                                    stopMonitor();
+                                                    for (int i = 0; i < selected.length; i++) {
+                                                        if (selected[i]) {
+                                                            try {
+                                                                beaconManager.startMonitoringBeaconsInRegion(new Region(beaconModelList.get(i).getName(), null, Identifier.parse(beaconModelList.get(i).getMajor_region_id().toString()), Identifier.parse(beaconModelList.get(i).getMinor_region_id().toString())));
+                                                            } catch (RemoteException re) {
+                                                                re.printStackTrace();
+                                                            }
+                                                        }
+                                                    }
+                                                    //Guardo la lista de items escogidos en formato Json para recuperarla mas fácil de las SharedPrefs
+                                                    prefs.edit().putString("itemsList", new Gson().toJson(itemList)).commit();
+                                                    finish();
+                                                }
+                                            })
+                                            .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                                public void onClick(DialogInterface dialog, int id) {
+                                                    //do things
+                                                }
+                                            });
+                                    AlertDialog alert = builder.create();
+                                    alert.show();
+                                }
+                                else{
+                                    stopMonitor();
+                                    for (int i = 0; i < selected.length; i++) {
+                                        if (selected[i]) {
+                                            try {
+                                                beaconManager.startMonitoringBeaconsInRegion(new Region(beaconModelList.get(i).getName(), null, Identifier.parse(beaconModelList.get(i).getMajor_region_id().toString()), Identifier.parse(beaconModelList.get(i).getMinor_region_id().toString())));
+                                            } catch (RemoteException re) {
+                                                re.printStackTrace();
+                                            }
+                                        }
+                                    }
+                                    //Guardo la lista de items escogidos en formato Json para recuperarla mas fácil de las SharedPrefs
+                                    prefs.edit().putString("itemsList", new Gson().toJson(itemList)).commit();
+                                    finish();
+                                }
+                            }
+                            else
+                                Toast.makeText(ItemsActivity.this, "La lista debe tener al menos un ítem", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+                else
+                    Log.d(TAG,"ERROR AL SINCRONIZAR LISTA");
+            }
+
+            @Override
+            public void onFailure(Call<List<BeaconModel>> call, Throwable t) {
+                Log.d(TAG,"ERROR DE RED");
+            }
+        });
     }
 }
